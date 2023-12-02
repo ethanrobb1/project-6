@@ -1,29 +1,65 @@
 """
 Resource: Brevet
+Name: Ethan Robb
 """
 from flask import Response, request
 from flask_restful import Resource
+from database.models import Brevet
+from mongoengine.errors import DoesNotExist, ValidationError
 
 # You need to implement this in database/models.py
 from database.models import Brevet
 
-# MongoEngine queries:
-# Brevet.objects() : similar to find_all. Returns a MongoEngine query
-# Brevet(...).save() : creates new brevet
-# Brevet.objects.get(id=...) : similar to find_one
+class Brevet(Resource):
+    def get(self, brevet_id: str):
+        """
+        Get a brevet from the database
+        """
+        try:
+            return Response(
+                Brevet.objects.get(id=brevet_id).to_json(),
+                mimetype="application/json",
+                status=200
+            )
+        except DoesNotExist:
+            return {"error": f"Brevet not found for id {brevet_id}."}, 404
+        except ValidationError as exc:
+            return {"error": str(exc)}, 400
+        except Exception as exc:
+            return {"error": str(exc)}, 500
 
-# Two options when returning responses:
-#
-# return Response(json_object, mimetype="application/json", status=200)
-# return python_dict, 200
-#
-# Why would you need both?
-# Flask-RESTful's default behavior:
-# Return python dictionary and status code,
-# it will serialize the dictionary as a JSON.
-#
-# MongoEngine's objects() has a .to_json() but not a .to_dict(),
-# So when you're returning a brevet / brevets, you need to convert
-# it from a MongoEngine query object to a JSON and send back the JSON
-# directly instead of letting Flask-RESTful attempt to convert it to a
-# JSON for you.
+    def put(self, brevet_id: str):
+        """
+        Swap a brevet in the database
+        """
+        try:
+            Brevet(**request.json).validate()  
+            docs_updated = Brevet.objects.get(id=brevet_id).update(
+                __raw__={"$set": request.json}  
+            )
+            if docs_updated == 1:  
+                return {"success": True}, 200
+            else:  
+                return {"error": "Internal Error"}, 500
+        except DoesNotExist:
+            return {"error": f"Brevet Not found for ID {brevet_id}."}, 404
+        except ValidationError as exc:
+            err_text = "\n".join(f"{str(k)}: {str(v)}" for k, v in exc.errors.items()) if exc.errors is not None \
+                                                                                       else str(exc)
+            return {"error": err_text}, 400
+        except Exception as exc:
+            return {"error": str(exc)}, 500
+
+    def delete(self, brevet_id: str):
+        """
+        Delete a brevet from the database
+        """
+        try:
+            Brevet.objects.get(id=brevet_id).delete()
+            return {"success": True}, 200
+        except DoesNotExist:
+            return {"error": f"Brevet not found for id {brevet_id}."}, 404
+        except ValidationError as exc:
+            return {"error": str(exc)}, 400
+        except Exception as exc:
+            return {"error": str(exc)}, 500
