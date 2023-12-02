@@ -40,12 +40,11 @@ class Brevet(Resource):
             if docs_updated == 1:  
                 return {"success": True}, 200
             else:  
-                return {"error": "Internal Error"}, 500
+                return {"error": "Error: Internal"}, 500
         except DoesNotExist:
             return {"error": f"Brevet Not found for ID {brevet_id}."}, 404
         except ValidationError as exc:
-            err_text = "\n".join(f"{str(k)}: {str(v)}" for k, v in exc.errors.items()) if exc.errors is not None \
-                                                                                       else str(exc)
+            err_text = "Error"
             return {"error": err_text}, 400
         except Exception as exc:
             return {"error": str(exc)}, 500

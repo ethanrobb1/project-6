@@ -27,8 +27,7 @@ class Brevets(Resource):
             new_doc = Brevet(**request.json).save(validate=True)
             return {"id": str(new_doc.id)}, 201
         except ValidationError as exc:
-            err_text = "\n".join(f"{str(k)}: {str(v)}" for k, v in exc.errors.items()) if exc.errors is not None \
-            else str(exc)
+            err_text = "Error" 
             return {"error": err_text}, 400
         except Exception as exc:
             return {"error": str(exc)}, 500
